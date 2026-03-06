@@ -1,7 +1,6 @@
 """
 AI Book Recommender - Streamlit App
 """
-import os
 import streamlit as st
 
 from utils.recommender import load_books, get_recommendations
@@ -20,16 +19,6 @@ PROFILES_PATH = "users.pkl"
 BOOKS_PATH = "data/books_with_embeddings.pkl"
 
 st.set_page_config(page_title="AI Book Recommender", page_icon="📚", layout="wide")
-
-
-# ── Environment check ────────────────────────────────────────────────────────
-api_key = os.environ.get("OPENAI_API_KEY", "")
-if not api_key:
-    st.error(
-        "OPENAI_API_KEY environment variable is not set. "
-        "Please set it before running the app."
-    )
-    st.stop()
 
 
 # ── Load books (cached in session_state) ─────────────────────────────────────
@@ -55,6 +44,20 @@ def persist_profiles():
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.title("📚 Book Recommender")
+    st.divider()
+
+    # API Key input
+    st.subheader("🔑 OpenAI API Key")
+    api_key = st.text_input(
+        "Enter your OpenAI API key",
+        type="password",
+        placeholder="sk-...",
+        help="Your key is never stored — it only lives in your browser session.",
+    )
+    if not api_key:
+        st.warning("Add your OpenAI API key above to get started.")
+        st.stop()
+
     st.divider()
 
     username = st.text_input("Username", placeholder="Enter your username…", key="username_input")
