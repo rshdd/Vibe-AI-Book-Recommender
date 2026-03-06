@@ -14,10 +14,6 @@ venv/
 .venv/
 env/
 
-# Data / model files (large binaries)
-*.pkl
-# data/  ← removed so books_with_embeddings.pkl gets committed
-
 # User profiles (runtime data)
 users.pkl
 
