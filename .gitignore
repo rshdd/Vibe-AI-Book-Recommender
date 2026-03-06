@@ -37,3 +37,7 @@ users.pkl
 # OS
 .DS_Store
 Thumbs.db
+
+# Jupyter notebooks (may contain secrets)
+*.ipynb
+.ipynb_checkpoints/
