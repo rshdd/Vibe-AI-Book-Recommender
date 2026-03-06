@@ -25,28 +25,19 @@ cd <repo-name>
 pip install -r requirements.txt
 ```
 
-### 3. Set your OpenAI API key
-
-```bash
-# Windows (CMD)
-set OPENAI_API_KEY=sk-...
-
-# Windows (PowerShell)
-$env:OPENAI_API_KEY="sk-..."
-
-# macOS / Linux
-export OPENAI_API_KEY=sk-...
-```
-
-### 4. Add the book data
+### 3. Add the book data
 
 Place `books_with_embeddings.pkl` inside a `data/` folder at the project root.  
 This file is not included in the repo due to its size.
 
-### 5. Run the app
+### 4. Run the app
 
 ```bash
 streamlit run app.py
+```
+
+```bash
+Enjoy the deployed version here: https://vibe-ai-book-recommender-prla.streamlit.app/
 ```
 
 ## Project Structure
