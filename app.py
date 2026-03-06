@@ -21,6 +21,103 @@ BOOKS_PATH = "data/books_with_embeddings.pkl"
 
 st.set_page_config(page_title="AI Book Recommender", page_icon="📚", layout="wide")
 
+st.markdown("""
+<style>
+/* ── Global font & background ── */
+html, body, [class*="css"] {
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+}
+
+/* ── Sidebar ── */
+[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+    border-right: 1px solid rgba(255,255,255,0.06);
+}
+[data-testid="stSidebar"] * {
+    color: #e2e8f0 !important;
+}
+
+/* ── Main area ── */
+[data-testid="stAppViewContainer"] > .main {
+    background: #0f0f1a;
+}
+
+/* ── Tabs ── */
+[data-testid="stTabs"] button {
+    font-size: 15px;
+    font-weight: 600;
+    color: #94a3b8;
+    border-radius: 8px 8px 0 0;
+}
+[data-testid="stTabs"] button[aria-selected="true"] {
+    color: #a78bfa !important;
+    border-bottom: 2px solid #a78bfa !important;
+}
+
+/* ── Book cards ── */
+[data-testid="stVerticalBlockBorderWrapper"] {
+    background: #1e1e30 !important;
+    border: 1px solid rgba(167,139,250,0.15) !important;
+    border-radius: 12px !important;
+    padding: 4px 8px !important;
+    transition: border-color 0.2s;
+}
+[data-testid="stVerticalBlockBorderWrapper"]:hover {
+    border-color: rgba(167,139,250,0.4) !important;
+}
+
+/* ── Primary button ── */
+[data-testid="stButton"] button[kind="primary"] {
+    background: linear-gradient(135deg, #7c3aed, #a855f7) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    color: white !important;
+}
+[data-testid="stButton"] button[kind="primary"]:hover {
+    background: linear-gradient(135deg, #6d28d9, #9333ea) !important;
+}
+
+/* ── Explore category buttons ── */
+[data-testid="stButton"] button[kind="secondary"] {
+    background: #1e1e30 !important;
+    border: 1px solid rgba(167,139,250,0.3) !important;
+    border-radius: 8px !important;
+    color: #c4b5fd !important;
+    font-weight: 500 !important;
+}
+[data-testid="stButton"] button[kind="secondary"]:hover {
+    background: rgba(124,58,237,0.2) !important;
+    border-color: #a78bfa !important;
+}
+
+/* ── Text input & textarea ── */
+[data-testid="stTextInput"] input,
+[data-testid="stTextArea"] textarea {
+    background: #1e1e30 !important;
+    border: 1px solid rgba(167,139,250,0.2) !important;
+    border-radius: 8px !important;
+    color: #e2e8f0 !important;
+}
+
+/* ── Expander ── */
+[data-testid="stExpander"] {
+    background: #16162a !important;
+    border: 1px solid rgba(167,139,250,0.1) !important;
+    border-radius: 8px !important;
+}
+
+/* ── Divider ── */
+hr {
+    border-color: rgba(167,139,250,0.15) !important;
+}
+
+/* ── Titles ── */
+h1 { color: #e2e8f0 !important; font-weight: 700 !important; }
+h2, h3 { color: #c4b5fd !important; font-weight: 600 !important; }
+</style>
+""", unsafe_allow_html=True)
+
 
 # ── Load books (cached in session_state) ─────────────────────────────────────
 if "books_df" not in st.session_state:
@@ -134,7 +231,7 @@ def render_recommendation_cards(results, username, profile, vibe, card_key_prefi
         description = book.get("description", "")
         score = book.get("similarity_score", 0.0)
 
-        desc_display = description[:200] + "…" if len(description) > 200 else description
+        desc_display = description
 
         is_liked = title in liked_titles
         is_disliked = title in disliked_titles
