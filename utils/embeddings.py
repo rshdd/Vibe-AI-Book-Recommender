@@ -13,7 +13,7 @@ def embed_text(text: str, api_key: str) -> list[float]:
     client = OpenAI(api_key=api_key)
     try:
         response = client.embeddings.create(
-            model="text-embedding-ada-002",
+            model="text-embedding-3-small",
             input=text,
         )
         return response.data[0].embedding
@@ -26,7 +26,8 @@ def generate_explanation(
     book: dict,
     liked_books: list[dict],
     api_key: str,
-    max_words: int = 100,
+    max_words: int = 120,
+    disliked_books: list[dict] = None,
 ) -> str:
     """
     Calls OpenAI chat completions to explain why a book was recommended.
@@ -37,26 +38,42 @@ def generate_explanation(
     categories = book.get("categories", "Unknown")
     description = book.get("description", "")
 
-    if liked_books:
-        liked_titles = ", ".join(b.get("title", "") for b in liked_books[:5])
+    liked_titles = ", ".join(f'"{b.get("title", "")}"' for b in (liked_books or [])[:5])
+    disliked_titles = ", ".join(f'"{b.get("title", "")}"' for b in (disliked_books or [])[:5])
+
+    if liked_titles and disliked_titles:
         user_context = (
-            f"The user has previously liked these books: {liked_titles}. "
-            "Explain the recommendation in the format: "
-            "'Recommended because it shares themes with books you liked such as X and Y.'"
+            f"The user liked: {liked_titles}. "
+            f"The user disliked: {disliked_titles}. "
+            f"Explain why \"{title}\" fits what they like and differs from what they disliked, "
+            f"drawing connections only to \"{title}\" itself."
+        )
+    elif liked_titles:
+        user_context = (
+            f"The user liked: {liked_titles}. "
+            f"Explain why \"{title}\" matches their taste by drawing thematic connections to \"{title}\" itself."
+        )
+    elif disliked_titles:
+        user_context = (
+            f"The user disliked: {disliked_titles}. "
+            f"Explain why \"{title}\" is a better fit and how it differs from what they disliked."
         )
     else:
         user_context = (
-            "The user has no liked books yet. "
-            "Explain the recommendation based solely on the vibe prompt and book metadata."
+            f"The user has no rating history yet. "
+            f"Explain why \"{title}\" matches their vibe based solely on its description and categories."
         )
 
     prompt = (
         f"You are a book recommendation assistant. "
-        f"The user is looking for: \"{vibe_prompt}\".\n\n"
-        f"Book: \"{title}\" by {authors}\n"
+        f"Explain ONLY why the specific book below was recommended. "
+        f"Do NOT mention, suggest, or reference any other book titles.\n\n"
+        f"Book being explained: \"{title}\" by {authors}\n"
         f"Categories: {categories}\n"
         f"Description: {description[:300]}\n\n"
+        f"The user's vibe/search: \"{vibe_prompt}\"\n\n"
         f"{user_context}\n\n"
+        f"Your explanation must be about \"{title}\" only. "
         f"Limit your explanation to a maximum of {max_words} words."
     )
 

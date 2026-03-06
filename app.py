@@ -2,6 +2,7 @@
 AI Book Recommender - Streamlit App
 """
 import streamlit as st
+import plotly.graph_objects as go
 
 from utils.recommender import load_books, get_recommendations
 from utils.user_profile import (
@@ -107,6 +108,18 @@ EXPLORE_CATEGORIES = [
     "Self-Help",
 ]
 
+# Richer prompts for explore categories — bare genre names produce weak embeddings
+EXPLORE_PROMPTS = {
+    "Dark Fantasy": "dark fantasy with magic, morally grey characters, gritty world-building and high stakes",
+    "Cozy Mystery": "cozy mystery with a charming amateur detective, small town setting and light-hearted tone",
+    "Space Opera": "epic space opera with interstellar travel, alien civilizations and grand adventure",
+    "Historical Romance": "historical romance set in a vivid past era with passionate love story and period detail",
+    "Hard Science Fiction": "hard science fiction grounded in real science, exploring technology and the future of humanity",
+    "Literary Fiction": "literary fiction with beautiful prose, complex characters and deep emotional themes",
+    "Thriller": "gripping thriller with suspense, twists, danger and a fast-paced plot",
+    "Self-Help": "self-help book with practical advice for personal growth, productivity and mindset",
+}
+
 
 # ── Helper: render recommendation cards ──────────────────────────────────────
 def render_recommendation_cards(results, username, profile, vibe, card_key_prefix="home"):
@@ -141,7 +154,7 @@ def render_recommendation_cards(results, username, profile, vibe, card_key_prefi
 
             with col_info:
                 st.markdown(f"**{card_icon} {title}**{state_label}")
-                st.caption(f"✍️ {authors}  |  🏷️ {categories}  |  🎯 Score: {score:.3f}")
+                st.caption(f"✍️ {authors}  |  🏷️ {categories}  |  🎯 Match: {score:.0%}")
                 st.write(desc_display)
 
             with col_actions:
@@ -171,7 +184,8 @@ def render_recommendation_cards(results, username, profile, vibe, card_key_prefi
                 if st.button("Generate explanation", key=f"{card_key_prefix}_explain_btn_{i}_{title}"):
                     with st.spinner("Generating explanation…"):
                         liked_books = profile.get("liked_books", [])
-                        explanation = generate_explanation(vibe, book, liked_books, api_key)
+                        disliked_books = profile.get("disliked_books", [])
+                        explanation = generate_explanation(vibe, book, liked_books, api_key, disliked_books=disliked_books)
                         st.session_state[explanation_key] = explanation
                     st.rerun()
             else:
@@ -257,7 +271,8 @@ with tab_explore:
         if "explore_results" not in st.session_state:
             with st.spinner(f"Finding '{selected_category}' books…"):
                 try:
-                    query_embedding = embed_text(selected_category, api_key)
+                    explore_prompt = EXPLORE_PROMPTS.get(selected_category, selected_category)
+                    query_embedding = embed_text(explore_prompt, api_key)
                     profile = get_or_create_profile(st.session_state["profiles"], username) if username else {"liked_books": [], "disliked_books": [], "liked_embeddings": [], "disliked_embeddings": []}
                     results = get_recommendations(query_embedding, books_df, profile)
                     st.session_state["explore_results"] = results
@@ -294,7 +309,48 @@ with tab_profile:
         st.subheader("📊 Genre Distribution")
         genre_dist = get_genre_distribution(profile)
         if genre_dist:
-            st.bar_chart(genre_dist)
+            sorted_genres = sorted(genre_dist.items(), key=lambda x: x[1], reverse=True)
+            labels = [g[0] for g in sorted_genres]
+            values = [g[1] for g in sorted_genres]
+
+            colors = [
+                "#7C3AED", "#A855F7", "#C084FC", "#E879F9",
+                "#F472B6", "#FB7185", "#FCA5A5", "#FDBA74",
+                "#FCD34D", "#86EFAC",
+            ]
+
+            fig = go.Figure(go.Bar(
+                x=values,
+                y=labels,
+                orientation="h",
+                marker=dict(
+                    color=colors[:len(labels)],
+                    line=dict(width=0),
+                ),
+                text=values,
+                textposition="outside",
+                hovertemplate="%{y}: %{x} book(s)<extra></extra>",
+            ))
+
+            fig.update_layout(
+                height=max(200, len(labels) * 48),
+                margin=dict(l=0, r=40, t=10, b=10),
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                xaxis=dict(
+                    showgrid=True,
+                    gridcolor="rgba(255,255,255,0.08)",
+                    zeroline=False,
+                    showticklabels=False,
+                ),
+                yaxis=dict(
+                    autorange="reversed",
+                    tickfont=dict(size=13),
+                ),
+                font=dict(color="#E2E8F0"),
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
         else:
             st.caption("No genre data yet — like some books to see your taste profile.")
 

@@ -76,6 +76,18 @@ def compute_personalized_query(
     return query / norm
 
 
+def normalize_scores(scores: np.ndarray) -> np.ndarray:
+    """
+    Rescales raw cosine scores to [0, 1] using min-max normalization.
+    High-dimensional embeddings (1536-d) produce naturally small cosine values
+    (~0.05–0.15 range), so this makes scores human-readable.
+    """
+    s_min, s_max = scores.min(), scores.max()
+    if s_max - s_min < 1e-10:
+        return np.ones_like(scores)
+    return (scores - s_min) / (s_max - s_min)
+
+
 def get_recommendations(
     query_embedding: np.ndarray,
     books_df: pd.DataFrame,
@@ -86,7 +98,7 @@ def get_recommendations(
 ) -> list:
     """
     Orchestrates personalized query + cosine similarity + top-N ranking.
-    Returns list of dicts with book metadata + similarity_score, sorted descending.
+    Returns list of dicts with book metadata + similarity_score (0–1), sorted descending.
     """
     liked_embeddings = profile.get("liked_embeddings", [])
     disliked_embeddings = profile.get("disliked_embeddings", [])
@@ -95,14 +107,23 @@ def get_recommendations(
         query_embedding, liked_embeddings, disliked_embeddings, alpha, beta
     )
 
-    embeddings_matrix = np.array(books_df["embedding"].tolist())
-    scores = cosine_similarity_batch(personalized, embeddings_matrix)
+    # Apply quality filter (same as notebook: rating > 3.5, at least 50 ratings)
+    quality_mask = (
+        books_df["average_rating"].fillna(0) > 3.5
+    ) & (
+        books_df["ratings_count"].fillna(0) > 50
+    )
+    filtered_df = books_df[quality_mask].reset_index(drop=True)
+
+    embeddings_matrix = np.array(filtered_df["embedding"].tolist())
+    raw_scores = cosine_similarity_batch(personalized, embeddings_matrix)
+    scores = normalize_scores(raw_scores)
 
     top_indices = np.argsort(scores)[::-1][:top_n]
 
     results = []
     for idx in top_indices:
-        row = books_df.iloc[idx]
+        row = filtered_df.iloc[idx]
         results.append({
             "title": row["title"],
             "authors": row["authors"],
