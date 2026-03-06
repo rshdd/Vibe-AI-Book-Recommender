@@ -36,10 +36,6 @@ This file is not included in the repo due to its size.
 streamlit run app.py
 ```
 
-```bash
-Enjoy the deployed version here: https://vibe-ai-book-recommender-prla.streamlit.app/
-```
-
 ## Project Structure
 
 ```
